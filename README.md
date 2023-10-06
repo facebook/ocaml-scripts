@@ -10,15 +10,18 @@ to support buck2/ocaml for OSS.
 *Disclaimer: rules.py is hardcoded to my (vsiles) current setup, please update it
 to fit yours until we make a proper reusable script ;)*
 
-Running `python3 meta2json.py` will dump all the collected information for the current
-opam switch in the env into a .json file (data.json is provided as an example).
-Running `python3 rules.py` will read the previously generated json file and
-create a BUCK file aimed at OSS released.
+Running `python3 dromedary.py -s SWITCH_ROOT_PATH -o BUCK_PATH` will parse the current opam switch with path `SWITCH_ROOT_PATH` for package information and create a BUCK file `BUCK_PATH`. `dromedary.py` combines the scripts `meta2json.py` and `rules.py`.
+
+Running `python3 meta2json.py -o JSON_PATH` or `python3 dromedary.py -j JSON_PATH -s SWITCH_ROOT_PATH -o BUCK_PATH` will dump all the collected information for the current
+opam switch in the env into a .json file `JSON_PATH` (data.json is provided as an example).
+
+Running `python3 rules.py -i JSON_PATH -s SWITCH_ROOT_PATH -o BUCK_PATH` or `python3 dromedary.py -i JSON_PATH -s SWITCH_ROOT_PATH -o BUCK_PATH` will read the previously generated json file `JSON_PATH` and
+create a BUCK file `BUCK_PATH` aimed at OSS released.
 
 These scripts are provided for internal experimentation only and should not be
 used until we settle on a proper workflow.
 
-*Note: rules.py might generate warnings like the following ones, which are
+*Note: `rules.py` and `dromedary.py` might generate warnings like the following ones, which are
 expected: these are native libraries name that we try to locate in the opam
 switch (and where we fail, because they are system wide libraries, not opam
 ones).
