@@ -25,22 +25,9 @@ ones).
 
 ```
 WARNING:root:Could not find file: /data/users/vsiles/opam/4.14.0+flambda/lib/ctypes/libintegers_stubs.a
-WARNING:root:Could not find file: /data/users/vsiles/opam/4.14.0+flambda/lib/ctypes/libintegers_stubs.a
 WARNING:root:Could not find file: /data/users/vsiles/opam/4.14.0+flambda/lib/mtime/clock/os/librt.a
-WARNING:root:Could not find file: /data/users/vsiles/opam/4.14.0+flambda/lib/mtime/clock/os/librt.a
-WARNING:root:Could not find file: /data/users/vsiles/opam/4.14.0+flambda/lib/mtime/clock/os/librt.a
-WARNING:root:Could not find file: /data/users/vsiles/opam/4.14.0+flambda/lib/sqlite3/libsqlite3.a
-WARNING:root:Could not find file: /data/users/vsiles/opam/4.14.0+flambda/lib/sqlite3/libpthread.a
-WARNING:root:Could not find file: /data/users/vsiles/opam/4.14.0+flambda/lib/sqlite3/libsqlite3.a
-WARNING:root:Could not find file: /data/users/vsiles/opam/4.14.0+flambda/lib/sqlite3/libpthread.a
-WARNING:root:Could not find file: /data/users/vsiles/opam/4.14.0+flambda/lib/ocaml/libpthread.a
-WARNING:root:Could not find file: /data/users/vsiles/opam/4.14.0+flambda/lib/ocaml/libpthread.a
-WARNING:root:Could not find file: /data/users/vsiles/opam/4.14.0+flambda/lib/zarith/libgmp.a
-WARNING:root:Could not find file: /data/users/vsiles/opam/4.14.0+flambda/lib/zarith/libgmp.a
-WARNING:root:Could not find file: /data/users/vsiles/opam/4.14.0+flambda/lib/zarith/zarith_top.cmxa
-WARNING:root:Could not find file: /data/users/vsiles/opam/4.14.0+flambda/lib/zip/libz.a
-WARNING:root:Could not find file: /data/users/vsiles/opam/4.14.0+flambda/lib/zip/libz.a
-```*
+...
+```
 
 ## Join the ocaml-scripts community
 See the [CONTRIBUTING](CONTRIBUTING.md) file for how to help out.
