@@ -10,6 +10,7 @@ import os
 import sys
 from typing import List
 
+
 # All path in here are "local" to the opam root directory.
 # We currently prepend them with 'opam' that can be a directory on disk,
 # or a symlink. This is fully configurable
@@ -356,10 +357,7 @@ def gen_targets(rules, json_path, local_root, opam_switch):
     rules_list.append(
         rules.prebuilt_cxx_library(
             name="ocaml-dev",
-            # TODO: this is a symlink name expected by the buck2/ocaml setup
-            #       reassess this in the future. We might just want to use
-            #       the `ocaml` value defined above
-            header_dirs=["standard_library"],
+            header_dirs=[rules.add_prefix(ocaml)],
             header_only=True,
         )
     )
@@ -390,6 +388,8 @@ def gen_targets(rules, json_path, local_root, opam_switch):
         rules.command_alias(
             name="ocamldebug-exe",
             exe=":ocamldebug",
+            # RC: I do not know what `ROOT/lib/ocaml` is supposed to do here.
+            # It only works, if `local_root` is a symlink!
             resources=[
                 ":ocamlrun",
                 ":ocamldebug",

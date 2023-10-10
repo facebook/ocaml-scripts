@@ -202,15 +202,20 @@ def library_kind(libname):
         sys.exit(1)
 
 
-def package_list():
+def package_list(exclude = None):
     # the package list is of the form
     # pkg1 (version ...)
     # ...
     # pkgN (version ...)
     # so we split on ')' first, and then split on whitespace to keep
     # the first part (pkg_i)
+    #
+    # `exclude` is a list of packages to not include in the list of packages.
     lst = ocamlfind_list().split(")")
     lst2 = clean_up(lst, lambda s: s.split()[0])
+    if exclude is not None:
+        print("Excluding packages {}".format(exclude))
+        lst2 = list(filter(lambda p: p not in exclude, lst2))
     return lst2
 
 
@@ -315,13 +320,15 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-p", "--package")
     parser.add_argument("-o", "--output")
+    parser.add_argument("-e", "--exclude", nargs="*")
 
     args = parser.parse_args()
 
     package = args.package
+    exclude = args.exclude
 
     data = None
-    pkg_list = package_list()
+    pkg_list = package_list(exclude)
 
     if package is None:
         # no package, processing them all
