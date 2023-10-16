@@ -254,13 +254,11 @@ def main() -> None:
     json_script = source_dir.joinpath(JSON_SCRIPT_NAME)
     if not json_script.exists():
         print(f"ERROR: script file {json_script} not found!", file=sys.stderr)
-        os.remove(INTERMEDIATE_JSON)  # always remove the temporary file.
-        sys.exit(1)
+        return error_exit(1)
     rules_script = source_dir.joinpath(RULE_SCRIPT_NAME)
     if not rules_script.exists():
         print(f"ERROR: script file {rules_script} not found!", file=sys.stderr)
-        os.remove(INTERMEDIATE_JSON)  # always remove the temporary file.
-        sys.exit(1)
+        return error_exit(1)
 
     args = parse_command_line()
 
