@@ -152,11 +152,11 @@ def run_command(cmd_args: List[Any], cmd_env: Dict[str, str]) -> None:
         )
         return error_exit(2)
     else:
-        printOutput(out)
+        print_output(out)
 
 
 ###############################################################################
-def printOutput(out: subprocess.CompletedProcess) -> None:
+def print_output(out: subprocess.CompletedProcess) -> None:
     """Print the output of the given finished process."""
     std_out = out.stdout.decode("utf-8")
     err_out = out.stderr.decode("utf-8")
