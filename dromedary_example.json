@@ -1,0 +1,9 @@
+{
+    "name": "./third-party",
+    "compiler": "ocaml-variants",
+    "packages": [
+        "menhirLib",
+        "sedlex=3.2",
+        "alcotest>=1.7.0"
+    ]
+}

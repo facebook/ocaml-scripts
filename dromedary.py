@@ -14,13 +14,14 @@ This uses two existing scripts, `./meta2json.py` and `./rules.py`.
 """
 
 import argparse
+import json
 import os
 import re
 import subprocess  # nosec
 import sys
 import tempfile
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 JSON_SCRIPT_NAME = "meta2json.py"
 """The name of the script to generate the JSON file from the packages in the
@@ -50,6 +51,14 @@ OPAM_SWITCH_ENV_SET_CMD = f"{OPAM_SWITCH_ENV_CMD} --switch"
 """The command to call Opam to get the environment of a named switch.
 MUST de followed by the name of the switch to display the environment of."""
 
+OPAM_SWITCH_CREATE_CMD = [OPAM_EXE, "switch", "create"]
+"""The command to call Opam with to create a new Opam switch.
+MUST be followed by at least the name or path of the switch."""
+
+OPAM_INSTALL_COMMAND = [OPAM_EXE, "install"]
+"""The command to call Opam with to install a list of packages.
+MUST be followed by a non-empty list of packages to install."""
+
 OPAM_PATH_NAME = "OPAM_SWITCH_PREFIX"
 """The name of the environment variable of the output of
 `OPAM_SWITCH_ENV_CMD` containing the path to the current or given opam
@@ -59,6 +68,14 @@ OPAM_SWITCH_NAME = "OPAMSWITCH"
 """The name of the environment variable of the output of
 `OPAM_SWITCH_ENV_CMD` containing the name of the current or given opam
 switch."""
+
+DEFAULT_OPAM_SWITCH_NAME = "./"
+"""The name (well, path) of the Opam switch to generate, if none is given in
+the config file."""
+
+DEFAULT_OPAM_COMPILER_NAME = "ocaml-variants"
+"""The compiler name to pass to `opam switch` if none is given in the config
+file."""
 
 PYTHON = sys.executable
 """Path to the python executable this script is called with"""
@@ -164,6 +181,143 @@ def print_output(out: subprocess.CompletedProcess) -> None:
 
 
 ###############################################################################
+def run_cmd_output(cmd_args: List[Any], cmd_env: Optional[Dict[str, str]]) -> str:
+    """Run the given command in a shell.
+
+    Prints the output of the process in "real time".
+
+    Args:
+        cmd_args (List[Any]): The command and it's arguments to run.
+        cmd_env (Optional[Dict[str, str]]): The environment to run the command
+                                            in.
+
+    Returns:
+        str: The accumulated stdout and stderr output of the process.
+    """
+    std_out: str = ""
+    with subprocess.Popen(
+        " ".join(map(lambda e: f"'{str(e)}'", cmd_args)),
+        shell=True,
+        env=cmd_env,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+    ) as p:  # nosec
+        while p.poll() is None:
+            std_str = p.stdout.read1().decode("utf-8")
+            std_out += std_str
+            print(std_str, end="", flush=True, file=sys.stdout)
+
+        if p.poll() != 0:
+            print(f"Error: command '{p.args}' returned '{p.poll()}'")
+            return error_exit(6)
+
+    return std_out
+
+
+###############################################################################
+def generate_switch(config_file: str) -> Tuple[str, Dict[str, Any]]:
+    """Generate an Opam switch from the configuration in the given JSON file
+    `config_file`.
+
+    Args:
+        config_file (str): The path to the JSON config file to use.
+
+    Returns:
+        Tuple[str, Dict[str, Any]]: The name of the generated Opam switch and
+                                    the content of the JSON file `config_file`.
+    """
+    print(f"Using config file '{config_file}'")
+    switch_config = read_json(config_file)
+
+    gen_switch_name = switch_config.get("name")
+    if gen_switch_name is None:
+        gen_switch_name = DEFAULT_OPAM_SWITCH_NAME
+
+    if gen_switch_name.startswith("."):
+        base_dir = Path(config_file).absolute().parent
+        gen_switch_name = base_dir.joinpath(gen_switch_name).resolve()
+
+    gen_switch_compiler = switch_config.get("compiler")
+    if gen_switch_compiler is None:
+        gen_switch_compiler = DEFAULT_OPAM_COMPILER_NAME
+    print(
+        f"Generating Opam switch '{gen_switch_name}' using compiler '{gen_switch_compiler}'"
+    )
+    if switch_config.get("packages") is None:
+        print(
+            "Error: no packages to install found in JSON configuration. Array 'packages' is missing!"
+        )
+        return error_exit(8)
+
+    switch_name_rex = r"^\s*#\s*Run\s*eval\s*\$\(opam\s*env\s*--switch=(?P<name>[^)]+)\)\s*to\s*update"
+    create_args = OPAM_SWITCH_CREATE_CMD
+    create_args.extend([gen_switch_name, gen_switch_compiler])
+    std = run_cmd_output(create_args, cmd_env=None)
+    match = re.search(switch_name_rex, std, re.UNICODE | re.DOTALL | re.MULTILINE)
+    if match is None:
+        print(
+            f"Error: could not successfully parse the output of 'opam switch create':\n{std}\nUsing regex {switch_name_rex}",
+            file=sys.stderr,
+        )
+        return error_exit(7)
+    else:
+        return match.group("name"), switch_config
+
+
+###############################################################################
+def read_json(path: str) -> Dict[str, Any]:
+    """Return the content of the JSON file `path`.
+
+    Args:
+        path (str): The path to the JSON file to parse.
+
+    Returns:
+        Dict[str, Any]: The contents of the JSON file `path`.
+    """
+    try:
+        with open(path, "rt", encoding="utf-8") as file:
+            switch_config = json.load(file)
+    except FileNotFoundError as exc:
+        print(
+            f"Error: configuration file '{path}' not found:\n{exc}",
+            file=sys.stderr,
+        )
+        return error_exit(4)
+    except json.decoder.JSONDecodeError as exc:
+        print(f"Error: file '{path}' JSON parsing error:\n{exc}")
+        return error_exit(5)
+    except Exception as exc:
+        print(f"Error: exception caught:\n{exc}")
+        return error_exit(6)
+
+    return switch_config
+
+
+###############################################################################
+def install_packages(switch_config: Dict[str, Any], cmd_env: Dict[str, str]) -> None:
+    """Install the packages given in `switch_config["packages"]`.
+
+    Uses the Opam environment `cmd_env`.
+
+    Args:
+        switch_config (Dict[str, Any]): The configuration containing the list
+                                        of packages to install.
+        cmd_env (Dict[str, str]): The environment to run the `opam install`
+                                  command in.
+    """
+    gen_switch_packages: Optional[List[str]] = switch_config.get("packages")
+    if gen_switch_packages is None:
+        print(
+            "Error: no packages to install found in JSON configuration. Array 'packages' is missing!"
+        )
+        return error_exit(8)
+    print(f"Installing packages '{gen_switch_packages}'")
+    inst_args = OPAM_INSTALL_COMMAND
+    inst_args.extend(gen_switch_packages)
+    _ = run_cmd_output(inst_args, cmd_env=cmd_env)
+
+
+###############################################################################
 def parse_command_line() -> argparse.Namespace:
     """
     Parse the command line.
@@ -190,8 +344,22 @@ Examples:
 
   To add all packages of the current Opam switch except ocaml-lsp-server to the
   file ./third-party/BUCK:
-    python3 dromedary.py -e ocaml-lsp-server -o ./third-party/BUCK""",
+    python3 dromedary.py -e ocaml-lsp-server -o ./third-party/BUCK
+
+  To generate a new Opam switch using the configuration file
+  ./dromedary.json and generate the file ./third-party/BUCK:
+    python3 dromedary.py -o ./third-party/BUCK ./dromedary.json""",
         epilog="For details, see https://github.com/facebook/ocaml-scripts.",
+    )
+
+    parser.add_argument(
+        "config_file",
+        metavar="CONFIG_FILE",
+        nargs="?",
+        help=(
+            "If a JSON configuration file with Opam switch and package "
+            "information is given, a new Opam switch is generated. Optional."
+        ),
     )
 
     parser.add_argument(
@@ -268,6 +436,13 @@ def main() -> None:
     exclude_list = args.exclude
 
     switch_name = args.switch
+
+    config_file: Optional[str] = args.config_file
+    switch_config: Dict[str, Any] = {}
+    if config_file is not None:
+        switch_name, switch_config = generate_switch(config_file)
+        print("")
+
     opam_env = opam_switch_env(switch_name)
     switch_name = opam_env[OPAM_SWITCH_NAME]
     sys_env = os.environ.copy()
@@ -275,6 +450,10 @@ def main() -> None:
     print(f"Using Opam switch {switch_name}")
     switch_path = opam_switch_path(opam_env)
     print(f"Using Opam path: {switch_path}")
+
+    if config_file is not None:
+        install_packages(switch_config, cmd_env)
+        print("")
 
     local_root: str = args.root
     link_dest = Path(output_file).parent.joinpath(local_root).absolute()

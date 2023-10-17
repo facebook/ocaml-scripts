@@ -16,7 +16,31 @@ All scripts display a help screen showing all possible arguments by adding `-h` 
 
 #### dromedary.py
 
+You can use `dromedary.py` to generate an opam switch or use an existing one.
+
+Running `python3 dromedary.py -o BUCK_PATH JSON_CONFIG` will use the JSON configuration file `JSON_CONFIG` to generate a new Opam switch and install the configured packages. The Buck 2 file `BUCK_PATH` is generated from the packages of the generated switch.
+
 Running `python3 dromedary.py -s SWITCH_NAME -o BUCK_PATH` will parse the Opam switch `SWITCH_NAME` for package information and create a BUCK file at `BUCK_PATH`. If no `-s SWITCH_NAME` is given, the currently active one is used. To exclude packages from `BUCK_PATH`, use `-e` with a space separated list of package names: `python3 dromedary.py -s SWITCH_NAME -o BUCK_PATH -e ocaml_lsp_server ocamlformat` does not include the packages `ocaml_lsp_server` and `ocamlformat`.
+
+JSON configuration:
+
+See file [./dromedary_example.json](./dromedary_example.json).
+
+```json
+{
+    "name": "./third-party",
+    "compiler": "ocaml-base-compiler",
+    "packages": [
+        "menhirLib",
+        "sedlex=3.2",
+        "alcotest>=1.7.0"
+    ]
+}
+```
+
+- `name` - Either the path to the directory to generate the Opam switch in or the global name of the switch. The path is relative to the directory of the JSON file. If this is missing, `"./"` is used.
+- `compiler` - The compiler to use for the switch. If this is missing, `"ocaml-variants"` is used.
+- `packages` - An array of Opam packages to install, may contain version numbers, each string is passed verbatim to `opam install`. _Must_ be present.
 
 **Note**: `dromedary.py` internally uses the scripts `meta2json.py` and `rules.py`, so no need to call them separately.
 
