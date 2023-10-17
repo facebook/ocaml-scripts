@@ -1,4 +1,4 @@
-# ocaml-scripts
+# ocaml-scripts [![facebook](https://circleci.com/gh/facebook/ocaml-scripts.svg?style=svg)](https://app.circleci.com/pipelines/github/facebook/ocaml-scripts)
 
 Experimental scripts to build a BUCK/TARGETS file from an opam switch.
 Forwords: this is Python, for now, because we hope to reuse most of this experiment to
