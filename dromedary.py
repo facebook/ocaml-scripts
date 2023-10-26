@@ -204,7 +204,10 @@ def run_cmd_output(cmd_args: List[Any], cmd_env: Optional[Dict[str, str]]) -> No
     )  # nosec
 
     if proc.returncode != 0:
-        print(f"Error: command '{proc.args}' returned '{proc.returncode}'")
+        print(
+            f"Error: command '{proc.args}' returned '{proc.returncode}'",
+            file=sys.stderr,
+        )
         return error_exit(6)
 
 
@@ -263,10 +266,10 @@ def read_json(path: str) -> Dict[str, Any]:
         )
         return error_exit(4)
     except json.decoder.JSONDecodeError as exc:
-        print(f"Error: file '{path}' JSON parsing error:\n{exc}")
+        print(f"Error: file '{path}' JSON parsing error:\n{exc}", file=sys.stderr)
         return error_exit(5)
     except Exception as exc:
-        print(f"Error: exception caught:\n{exc}")
+        print(f"Error: exception caught:\n{exc}", file=sys.stderr)
         return error_exit(6)
 
     return switch_config
@@ -287,7 +290,8 @@ def validate_config(switch_config: Dict[str, Any], json_path: str) -> SwitchConf
     switch_packages = switch_config.get("packages")
     if switch_packages is None:
         print(
-            "Error: no packages to install found in JSON configuration. Array 'packages' is missing!"
+            "Error: no packages to install found in JSON configuration. Array 'packages' is missing!",
+            file=sys.stderr,
         )
         return error_exit(8)
 
