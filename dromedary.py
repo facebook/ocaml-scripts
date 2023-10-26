@@ -14,6 +14,7 @@ This uses two existing scripts, `./meta2json.py` and `./rules.py`.
 """
 
 import argparse
+from dataclasses import dataclass
 import json
 import os
 import re
@@ -21,7 +22,7 @@ import subprocess  # nosec
 import sys
 import tempfile
 from pathlib import Path
-from typing import Any, Dict, List, NamedTuple, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 JSON_SCRIPT_NAME = "meta2json.py"
 """The name of the script to generate the JSON file from the packages in the
@@ -55,7 +56,7 @@ OPAM_SWITCH_CREATE_CMD = [OPAM_EXE, "switch", "create"]
 """The command to call Opam with to create a new Opam switch.
 MUST be followed by at least the name or path of the switch."""
 
-OPAM_INSTALL_COMMAND = [OPAM_EXE, "install"]
+OPAM_INSTALL_COMMAND = [OPAM_EXE, "install", "--yes"]
 """The command to call Opam with to install a list of packages.
 MUST be followed by a non-empty list of packages to install."""
 
@@ -181,8 +182,12 @@ def print_output(out: subprocess.CompletedProcess) -> None:
 
 
 ###############################################################################
-def run_cmd_output(cmd_args: List[Any], cmd_env: Optional[Dict[str, str]]) -> str:
-    """Run the given command in a shell.
+def run_cmd_output(cmd_args: List[Any], cmd_env: Optional[Dict[str, str]]) -> None:
+    """Run the given command in a shell with the environment
+    `cmd_env` set.
+
+    Every argument given in `cmd_args` is quoted in single quotes `'` before
+    being passed to the shell.
 
     Prints the output of the process in "real time".
 
@@ -190,32 +195,23 @@ def run_cmd_output(cmd_args: List[Any], cmd_env: Optional[Dict[str, str]]) -> st
         cmd_args (List[Any]): The command and it's arguments to run.
         cmd_env (Optional[Dict[str, str]]): The environment to run the command
                                             in.
-
-    Returns:
-        str: The accumulated stdout and stderr output of the process.
     """
-    std_out: str = ""
-    with subprocess.Popen(
+    proc = subprocess.run(
         " ".join(map(lambda e: f"'{str(e)}'", cmd_args)),
         shell=True,
         env=cmd_env,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-    ) as p:  # nosec
-        while p.poll() is None:
-            std_str = p.stdout.read1().decode("utf-8")
-            std_out += std_str
-            print(std_str, end="", flush=True, file=sys.stdout)
+        check=False,
+    )  # nosec
 
-        if p.poll() != 0:
-            print(f"Error: command '{p.args}' returned '{p.poll()}'")
-            return error_exit(6)
-
-    return std_out
+    if proc.returncode != 0:
+        print(f"Error: command '{proc.args}' returned '{proc.returncode}'")
+        return error_exit(6)
 
 
-class SwitchConfig(NamedTuple):
+@dataclass(frozen=True)
+class SwitchConfig:
     """Holds valid configuration of a switch to create."""
+
     name: str
     compiler: str
     packages: List[str]
@@ -230,8 +226,8 @@ def generate_switch(config_file: str) -> Tuple[str, List[str]]:
         config_file (str): The path to the JSON config file to use.
 
     Returns:
-        SwitchConfig: A `Tuple` containing the name of the generated Opam
-                      switch and the list of packages to install.
+        Tuple[str, List[str]: A `Tuple` containing the name of the generated
+                              Opam switch and the list of packages to install.
     """
     print(f"Using config file '{config_file}'")
     switch_config = read_json(config_file)
@@ -241,19 +237,10 @@ def generate_switch(config_file: str) -> Tuple[str, List[str]]:
         f"Generating Opam switch '{valid_config.name}' using compiler '{valid_config.compiler}'"
     )
 
-    switch_name_rex = r"^\s*#\s*Run\s*eval\s*\$\(opam\s*env\s*--switch=(?P<name>[^)]+)\)\s*to\s*update"
     create_args = OPAM_SWITCH_CREATE_CMD
     create_args.extend([valid_config.name, valid_config.compiler])
-    std = run_cmd_output(create_args, cmd_env=None)
-    match = re.search(switch_name_rex, std, re.UNICODE | re.DOTALL | re.MULTILINE)
-    if match is None:
-        print(
-            f"Error: could not successfully parse the output of 'opam switch create':\n{std}\nUsing regex {switch_name_rex}",
-            file=sys.stderr,
-        )
-        return error_exit(7)
-    else:
-        return match.group("name"), valid_config.packages
+    run_cmd_output(create_args, cmd_env=None)
+    return valid_config.name, valid_config.packages
 
 
 ###############################################################################
@@ -337,7 +324,7 @@ def install_packages(packages: List[str], cmd_env: Dict[str, str]) -> None:
     print(f"Installing packages '{packages}'")
     inst_args = OPAM_INSTALL_COMMAND
     inst_args.extend(packages)
-    _ = run_cmd_output(inst_args, cmd_env=cmd_env)
+    run_cmd_output(inst_args, cmd_env=cmd_env)
 
 
 ###############################################################################
