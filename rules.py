@@ -224,7 +224,7 @@ def _process(rules, opam_switch, pkg):
     # lib*.a files are in ocaml/ directly, so we need to patch
     # that manually.
     #
-    # TODO: revisit in 5.0 in case it's better
+    # TODO: revisit in 5.1 in case it's better
     ocaml = os.path.join(relativelib, "ocaml")
     otherlibs = [
         "dynlink",
