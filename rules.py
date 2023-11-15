@@ -218,30 +218,37 @@ def _process(rules, opam_switch, pkg):
     # check if the library is present on disk as it might be
     # an external dependency like libpng or z
     # vsiles:
-    # In <= 4.14.0, the content of the threads/posix library is not correctly
-    # installed: all the cm* files are in ocaml/threads/ but the lib*.a files
-    # are in ocaml/ directly, so we need to patch that manually.
+    # In <= 4.14.0, the content of several libraries, including
+    # threads/posix, unix, and runtime_events, are not correctly
+    # installed: all the cm* files are in ocaml/<lib>/ but the
+    # lib*.a files are in ocaml/ directly, so we need to patch
+    # that manually.
     #
     # TODO: revisit in 5.0 in case it's better
     ocaml = os.path.join(relativelib, "ocaml")
+    otherlibs = [
+        "dynlink",
+        "runtime_events",
+        "str",
+        "threads",
+        "unix",
+    ]
 
     native_c_libs = []
     for lib in pkg["native_c_libs"]:
-        patched_dir = target_dir
-        if name.startswith("threads."):  # . is important. Matches .posix and .vm
-            patched_dir = ocaml
         lib_name = "lib{}.a".format(lib)
-        lib_path = check_file(opam_switch, patched_dir, lib_name)
+        lib_path = check_file(opam_switch, target_dir, lib_name)
+        if lib in otherlibs and not lib_path:
+            lib_path = check_file(opam_switch, ocaml, lib_name)
         if lib_path:
             native_c_libs.append(lib_path)
 
     bytecode_c_libs = []
     for lib in pkg["bytecode_c_libs"]:
-        patched_dir = target_dir
-        if name.startswith("threads."):  # . is important. Matches .posix and .vm
-            patched_dir = ocaml
         lib_name = "lib{}.a".format(lib)
-        lib_path = check_file(opam_switch, patched_dir, lib_name)
+        lib_path = check_file(opam_switch, target_dir, lib_name)
+        if lib in otherlibs and not lib_path:
+            lib_path = check_file(opam_switch, ocaml, lib_name)
         if lib_path:
             bytecode_c_libs.append(lib_path)
 
