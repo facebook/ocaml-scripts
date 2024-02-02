@@ -1,0 +1,30 @@
+name: Run tests
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+jobs:
+  run-tests:
+    name: ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu, macos]
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install opam
+        if: matrix.os == 'ubuntu'
+      - run: brew install opam
+        if: matrix.os == 'macos'
+      - run: |-
+          opam init --compiler=5.1.1 --disable-sandboxing -y
+          opam install ocamlfind
+          opam env | sed -e "s/ export .*//g" -e "s/'//g" -e "s/\;//g" >> $GITHUB_ENV
+      - run: |-
+          mkdir -p third-party/ocaml
+          cd third-party/ocaml
+          ln -s "$OPAM_SWITCH_PREFIX" opam
+      - run: |-
+          python3 dromedary.py -s "$(basename $OPAM_SWITCH_PREFIX)" -o third-party/ocaml/BUCK
+          cat third-party/ocaml/BUCK
