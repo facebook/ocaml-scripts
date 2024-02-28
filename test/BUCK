@@ -1,0 +1,5 @@
+ocaml_binary(
+  name = "test-unix",
+  srcs = ["test_unix.ml"],
+  deps = ["root//third-party/ocaml:unix"],
+)
