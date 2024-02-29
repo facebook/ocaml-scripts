@@ -4,6 +4,9 @@ prelude = prelude
 toolchains = toolchains
 none = none
 
+[buildfile]
+name = BUCK.test
+
 [repository_aliases]
 config = prelude
 fbcode = none

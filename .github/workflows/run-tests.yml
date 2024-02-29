@@ -26,5 +26,5 @@ jobs:
           cd third-party/ocaml
           ln -s "$OPAM_SWITCH_PREFIX" opam
       - run: |-
-          python3 dromedary.py -s "$(basename $OPAM_SWITCH_PREFIX)" -o third-party/ocaml/BUCK
-          cat third-party/ocaml/BUCK
+          python3 dromedary.py -s "$(basename $OPAM_SWITCH_PREFIX)" -o third-party/ocaml/BUCK.test
+          cat third-party/ocaml/BUCK.test
