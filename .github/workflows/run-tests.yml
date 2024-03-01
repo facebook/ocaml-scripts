@@ -16,7 +16,7 @@ jobs:
         with:
           submodules: 'true'
       - uses: facebook/install-dotslash@latest
-      - run: sudo apt-get update && sudo apt-get install opam
+      - run: sudo apt-get install opam
         if: matrix.os == 'ubuntu'
       - run: brew install opam
         if: matrix.os == 'macos'
@@ -29,6 +29,7 @@ jobs:
           (cd third-party/ocaml && ln -s "$OPAM_SWITCH_PREFIX" opam)
           python3 dromedary.py -s "$(basename $OPAM_SWITCH_PREFIX)" -o third-party/ocaml/BUCK.test
           cat third-party/ocaml/BUCK.test
+      - run: echo "PATH=$(pwd):$PATH" >> $GITHUB_ENV
       - run: |-
-          PATH=$(pwd):$PATH; export PATH
-          buck2 run root//test:version -v 2
+          buck2 run root//test:version
+          cat $(buck2 build root//test:config --show-full-simple-output)
