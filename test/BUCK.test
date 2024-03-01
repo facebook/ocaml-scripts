@@ -1,8 +1,21 @@
+# Example commands to generate 'third-party/ocaml/BUCK.test'.
+# ```
+#   mkdir -p third-party/ocaml
+#   python3 ~/project/ocaml-scripts/dromedary.py -s "$(basename $OPAM_SWITCH_PREFIX)" -o ~/project/ocaml-scripts/third-party/ocaml/BUCK.test
+# ```
+
 _SUPPORTED = not host_info().os.is_windows
 
 # buildifier: disable=no-effect
+cxx_binary(
+    name = "version",
+    srcs = ["version.c"],
+    deps = ["root//third-party/ocaml:ocaml-dev"],
+) if _SUPPORTED else None
+
+# buildifier: disable=no-effect
 ocaml_binary(
-    name = "test-unix",
-    srcs = ["test_unix.ml"],
+    name = "unix",
+    srcs = ["unix.ml"],
     deps = ["root//third-party/ocaml:unix"],
 ) if _SUPPORTED else None

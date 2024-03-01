@@ -13,18 +13,22 @@ jobs:
         os: [ubuntu, macos]
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: 'true'
+      - uses: facebook/install-dotslash@latest
       - run: sudo apt-get update && sudo apt-get install opam
         if: matrix.os == 'ubuntu'
       - run: brew install opam
         if: matrix.os == 'macos'
       - run: |-
-          opam init --compiler=5.1.1 --disable-sandboxing -y
-          opam install ocamlfind
+          opam init --color=always --compiler=5.1.1 --disable-sandboxing -y
+          opam install --color=always ocamlfind
           opam env | sed -e "s/ export .*//g" -e "s/'//g" -e "s/\;//g" >> $GITHUB_ENV
       - run: |-
           mkdir -p third-party/ocaml
-          cd third-party/ocaml
-          ln -s "$OPAM_SWITCH_PREFIX" opam
-      - run: |-
+          (cd third-party/ocaml && ln -s "$OPAM_SWITCH_PREFIX" opam)
           python3 dromedary.py -s "$(basename $OPAM_SWITCH_PREFIX)" -o third-party/ocaml/BUCK.test
           cat third-party/ocaml/BUCK.test
+      - run: |-
+          PATH=$(pwd):$PATH; export PATH
+          buck2 run root//test:version -v 2
