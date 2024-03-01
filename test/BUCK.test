@@ -14,6 +14,13 @@ cxx_binary(
 ) if _SUPPORTED else None
 
 # buildifier: disable=no-effect
+genrule(
+  name = "config",
+  out = "config.txt",
+  bash = '$(exe_target root//third-party/ocaml:ocamlopt-exe) -config > $OUT',
+) if _SUPPORTED else None
+
+# buildifier: disable=no-effect
 ocaml_binary(
     name = "unix",
     srcs = ["unix.ml"],
