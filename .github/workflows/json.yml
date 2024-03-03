@@ -1,4 +1,4 @@
-name: use pre-existing switch
+name: build switch from json
 on:
   push:
   pull_request:
@@ -22,14 +22,20 @@ jobs:
         if: matrix.os == 'macos'
       - run: |-
           opam init --color=always --compiler=5.1.1 --disable-sandboxing -y
-          opam install --color=always ocamlfind
           opam env | sed -e "s/ export .*//g" -e "s/'//g" -e "s/\;//g" >> $GITHUB_ENV
       - run: |-
-          mkdir -p third-party/ocaml
-          (cd third-party/ocaml && ln -s "$OPAM_SWITCH_PREFIX" opam)
-          python3 dromedary.py -s "$(basename $OPAM_SWITCH_PREFIX)" -o third-party/ocaml/BUCK.test
-          cat third-party/ocaml/BUCK.test
+            mkdir -p third-party/ocaml
+            cat > switch.json <<EOF
+            {
+              "name": "./third-party",
+              "compiler": "ocaml-variants",
+              "packages": [
+                "ocamlfind"
+              ]
+            }
+            EOF
+            python3 dromedary.py -o ./third-party/ocaml/BUCK.test switch.json
       - run: echo "PATH=$(pwd):$PATH" >> $GITHUB_ENV
       - run: |-
-          buck2 run root//test:version
-          cat $(buck2 build root//test:config --show-full-simple-output)
+           buck2 run root//test:version
+           cat $(buck2 build root//test:config --show-full-simple-output)
