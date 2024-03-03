@@ -23,6 +23,13 @@ genrule(
 # buildifier: disable=no-effect
 ocaml_binary(
     name = "unix",
-    srcs = ["unix.ml"],
+    srcs = ["test_unix.ml"],
     deps = ["root//third-party/ocaml:unix"],
+) if _SUPPORTED else None
+
+# buildifier: disable=no-effect
+ocaml_binary(
+    name = "str",
+    srcs = ["test_str.ml"],
+    deps = ["root//third-party/ocaml:str"],
 ) if _SUPPORTED else None

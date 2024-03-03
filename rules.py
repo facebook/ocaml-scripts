@@ -223,22 +223,26 @@ def _process(rules, opam_switch, pkg):
     # installed: all the cm* files are in ocaml/<lib>/ but the
     # lib*.a files are in ocaml/ directly, so we need to patch
     # that manually.
-    #
-    # TODO: revisit in 5.1 in case it's better
     ocaml = os.path.join(relativelib, "ocaml")
-    otherlibs = [
-        "dynlink",
-        "runtime_events",
-        "str",
-        "threads",
-        "unix",
+    compiler_nativelibs = [
+      "camlruntime_eventsnat",
+      "unixnat",
+      "threadsnat",
+      "camlstrnat",
+    ]
+    compiler_bytelibs = [
+      "camlruntime_eventsbyt",
+      "unixbyt",
+      "threads",
+      "camlstrbyt",
     ]
 
     native_c_libs = []
     for lib in pkg["native_c_libs"]:
         lib_name = "lib{}.a".format(lib)
         lib_path = check_file(opam_switch, target_dir, lib_name)
-        if lib in otherlibs and not lib_path:
+        if not lib_path and lib in compiler_nativelibs:
+            # e.g. lib/ocaml/libunixnat.a
             lib_path = check_file(opam_switch, ocaml, lib_name)
         if lib_path:
             native_c_libs.append(lib_path)
@@ -247,7 +251,8 @@ def _process(rules, opam_switch, pkg):
     for lib in pkg["bytecode_c_libs"]:
         lib_name = "lib{}.a".format(lib)
         lib_path = check_file(opam_switch, target_dir, lib_name)
-        if lib in otherlibs and not lib_path:
+        if not lib_path and lib in compiler_bytelibs:
+            # e.g. 'lib/ocaml/libunixbyt.a'
             lib_path = check_file(opam_switch, ocaml, lib_name)
         if lib_path:
             bytecode_c_libs.append(lib_path)
