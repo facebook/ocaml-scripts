@@ -17,6 +17,7 @@ from subprocess import PIPE, Popen
 # T145908290 and
 # https://fb.quip.com/MFTCA8gp0USa
 
+
 # takes a list of strings, strips the leading/trailing spaces
 # and remove the empty entries.
 # We pass in an optional lambda to apply to non-empty entries
