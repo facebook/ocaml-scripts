@@ -1,4 +1,4 @@
-# ocaml-scripts [![Run tests](https://github.com/facebook/ocaml-scripts/actions/workflows/run-tests.yml/badge.svg)](https://github.com/facebook/ocaml-scripts/actions/workflows/run-tests.yml)
+# ocaml-scripts [![use pre-existing switch](https://github.com/facebook/ocaml-scripts/actions/workflows/run-tests.yml/badge.svg)](https://github.com/facebook/ocaml-scripts/actions/workflows/run-tests.yml)[![build switch from json](https://github.com/shayne-fletcher/ocaml-scripts/actions/workflows/json.yml/badge.svg)](https://github.com/shayne-fletcher/ocaml-scripts/actions/workflows/json.yml)
 
 Experimental scripts to build a BUCK/TARGETS file from an opam switch.
 Forwords: this is Python, for now, because we hope to reuse most of this experiment to
