@@ -102,12 +102,12 @@ def opam_switch_env(switch: Optional[str]) -> Dict[str, str]:
     Returns:
         Dict[str, str]: The environment variables `opam env` sets.
     """
-    cmd = OPAM_SWITCH_ENV_CMD
+    cmd = [OPAM_EXE, "env", "--set-switch"]
     if switch is not None:
-        cmd = f"{OPAM_SWITCH_ENV_SET_CMD} {switch}"
+        cmd.extend(["--switch", switch])
     out = subprocess.run(
         cmd,
-        shell=True,
+        shell=False,
         capture_output=True,
         check=False,
     )  # nosec
